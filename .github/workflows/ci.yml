@@ -25,7 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'pnpm'
+          # No pnpm cache until a lockfile is committed (setup-node's pnpm cache
+          # requires pnpm-lock.yaml to exist).
       - name: Install dependencies
         shell: bash
         env:
