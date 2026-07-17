@@ -33,7 +33,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          pnpm install --frozen-lockfile 2>&1 | tee install.log
+          # No committed lockfile yet: resolve @12-apps/* fresh from GitHub
+          # Packages and let CI generate it. Once a lockfile is committed, switch
+          # back to --frozen-lockfile for reproducible installs.
+          pnpm install --no-frozen-lockfile 2>&1 | tee install.log
       - name: Type check
         shell: bash
         run: |
