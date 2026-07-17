@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   build:
@@ -30,13 +29,13 @@ jobs:
       - name: Install dependencies
         shell: bash
         env:
-          # Authenticates the @12-apps scope against GitHub Packages (see .npmrc).
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Reads the private @12-apps/* packages from npm (see .npmrc).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -o pipefail
-          # No committed lockfile yet: resolve @12-apps/* fresh from GitHub
-          # Packages and let CI generate it. Once a lockfile is committed, switch
-          # back to --frozen-lockfile for reproducible installs.
+          # No committed lockfile yet: resolve @12-apps/* fresh from npm and let
+          # CI generate it. Once a lockfile is committed, switch back to
+          # --frozen-lockfile for reproducible installs.
           pnpm install --no-frozen-lockfile 2>&1 | tee install.log
       - name: Type check
         shell: bash
