@@ -96,10 +96,26 @@ The rest are gated on things that do not exist yet, not on repo shape any more:
 arrive with their ports. `nextjs-prod-smoke` will never apply — there is no
 Next.js app, by design.
 
+## The three front ends
+
+`client`, `admin` and `super-admin` are all here, because the split is not
+Future-Pay-specific: a customer app, a tenant backoffice and a platform console
+have different authorization, different navigation and different deploy risk.
+
+`admin` gates on tenant permissions and `super-admin` on platform ones — the
+distinction `@12-apps/rbac` already models through the scope carried on every
+decision (a tenant id, or `GLOBAL`). Both currently deny everything, because
+nothing resolves an actor into a permission set yet (12-13). That is the correct
+default and the pages say so rather than rendering as though authorization were
+solved.
+
+What the three share lives in `packages/spa-shell`, which is a **placeholder**
+for `@12-apps/app-shell` (12-18) and is kept deliberately thin — a second
+private shell is exactly what that ticket exists to prevent.
+
 ## What this repo deliberately does not copy from future-pay
 
-Three SPAs (this ships one), a docs site, Gherkin journeys, the e2e affected
-selector and its map, the payments LOC burn-down, MCP store-compliance
-artifacts, the demo-store fixtures, and the pt-BR user-facing-language rule
-(12-40). Those are Future-Pay's, and shipping them as a template teaches a new
-app the wrong things.
+A docs site, Gherkin journeys, the e2e affected selector and its map, the
+payments LOC burn-down, MCP store-compliance artifacts, the demo-store fixtures,
+and the pt-BR user-facing-language rule (12-40). Those are Future-Pay's, and
+shipping them as a template teaches a new app the wrong things.

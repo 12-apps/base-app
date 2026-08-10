@@ -7,35 +7,44 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { features } from "./features";
 
-// A downstream consumer owns its theme; the shared components render against it.
+// One theme for all three SPAs. A real app overrides it per surface if the
+// backoffice should not look like the storefront; the default is that it should.
 const theme = createTheme();
 
 const queryClient = new QueryClient();
 
 export interface ProvidersProps {
   children: ReactNode;
+  /** Shown by the install invite. Each SPA passes its own. */
+  appName: string;
   /**
    * The permissions the current actor holds, ALREADY RESOLVED by the API.
    *
    * `@12-apps/rbac` deliberately never resolves them itself — it narrows against
    * what the host passes in. The server half that computes this set (session →
-   * membership → roles → permissions) is 12-12 and 12-13; until it lands the
-   * scaffold passes an empty set, so `<Can>` denies everything, which is the
-   * correct default for a base repo.
+   * membership → roles → permissions) is 12-12 and 12-13; until it lands every
+   * SPA passes an empty set, so `<Can>` denies everything. That is the correct
+   * default for a base repo: a backoffice that showed its screens before anyone
+   * wired up authorization would be teaching the wrong lesson.
    */
   permissions?: readonly string[];
 }
 
 /**
- * Every provider this app mounts, each behind its flag in `@base/features`.
+ * Every provider the SPAs mount, each behind its flag in `@base/features`.
  *
  * Flags are off by default, so a fresh clone renders with nothing but the theme
  * and the query client. What is COMMENTED below is the exact mount each
  * subsystem will take, kept next to its flag so adopting one is installing the
  * package and uncommenting a block. Each names the ticket that ships it.
+ *
+ * This whole module is a placeholder for `@12-apps/app-shell` (12-18). Adding a
+ * second private shell is the thing that ticket exists to stop, so anything
+ * bigger than a mount belongs there instead of here.
  */
 export function Providers({
   children,
+  appName,
   permissions = [],
 }: ProvidersProps): JSX.Element {
   let tree = children;
@@ -48,10 +57,10 @@ export function Providers({
   }
 
   // ── Observability (@12-apps/observability-frontend) — 12-21 ────────────────
-  // Now installable: the package peers on `react-router-dom` and `vite`, which
-  // a Next host could not satisfy and this one does. Wiring it needs the served
-  // DSN endpoint on the API side, which is the rest of 12-21 — the DSN is
-  // SERVED rather than baked into the bundle on purpose.
+  // Installable now that these are Vite SPAs: the package peers on
+  // `react-router-dom` and `vite`, which a Next host could not satisfy. Wiring
+  // it needs the served-DSN endpoint on the API side — the DSN is SERVED rather
+  // than baked into the bundle on purpose.
   //
   // if (features.observability) {
   //   const RouteErrorBoundary = createRouteErrorBoundary({ fallback: RouteCrash });
@@ -98,13 +107,21 @@ export function Providers({
   //   tree = <EventsProvider url={eventsUrl}>{tree}</EventsProvider>;
   // }
 
+  // ── Impersonation (no package) — 12-24 ─────────────────────────────────────
+  // The banner and exit control belong in super-admin and admin. The write
+  // guard is the load-bearing half and lives on the API side.
+  //
+  // if (features.impersonation) {
+  //   tree = <ImpersonationBanner>{tree}</ImpersonationBanner>;
+  // }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         {tree}
         {/* Renders nothing until the browser offers an install prompt. */}
-        {features.pwa ? <InstallInvite what="base-app" enabled /> : null}
+        {features.pwa ? <InstallInvite what={appName} enabled /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );

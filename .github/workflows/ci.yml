@@ -40,8 +40,10 @@ jobs:
     with:
       vitest-cache-paths: |
         apps/api/node_modules/.vite/vitest
-        apps/spa/node_modules/.vite/vitest
         apps/events/node_modules/.vite/vitest
+        apps/client/node_modules/.vite/vitest
+        apps/admin/node_modules/.vite/vitest
+        apps/super-admin/node_modules/.vite/vitest
 
   # Require ONLY this job in the branch ruleset.
   #

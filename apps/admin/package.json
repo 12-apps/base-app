@@ -1,22 +1,22 @@
 {
-  "name": "spa",
+  "name": "admin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The single-page app. Talks to `api` over /api, which Vite proxies in dev and the front proxy serves in production.",
+  "description": "The tenant backoffice. Every screen is behind a permission, so it is the surface that proves RBAC is wired.",
   "scripts": {
-    "dev": "vite --port 4001",
+    "dev": "vite --port 3002",
     "build": "vite build",
-    "preview": "vite preview --port 4001",
+    "preview": "vite preview --port 3002",
     "lint": "eslint --max-warnings 0 .",
     "check-types": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@12-apps/pwa": "1.5.0",
     "@12-apps/rbac": "1.18.0",
     "@12-apps/ui": "1.23.0",
     "@base/features": "workspace:*",
+    "@base/spa-shell": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^6.5.0",

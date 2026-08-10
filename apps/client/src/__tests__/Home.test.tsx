@@ -5,8 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Home from "../pages/Home";
 
 function renderHome() {
-  // `retry: false` or a rejected query sits in three exponential backoffs before
-  // the error branch renders, and the test times out instead of asserting.
+  // `retry: false` or a rejected query sits through three exponential backoffs
+  // before the error branch renders, and the test times out instead of failing
+  // on the assertion.
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -20,7 +21,7 @@ afterEach(() => {
 });
 
 describe("Home", () => {
-  it("shows the subsystems the API reports, not the SPA's own flags", async () => {
+  it("shows the subsystems the API reports, not this bundle's own flags", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({

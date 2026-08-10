@@ -1,0 +1,42 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The customer-facing app. Mostly public; the one surface an unauthenticated visitor reaches.",
+  "scripts": {
+    "dev": "vite --port 4001",
+    "build": "vite build",
+    "preview": "vite preview --port 4001",
+    "lint": "eslint --max-warnings 0 .",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@12-apps/ui": "1.23.0",
+    "@base/features": "workspace:*",
+    "@base/spa-shell": "workspace:*",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.5.0",
+    "@tanstack/react-query": "^5.62.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.1.0"
+  },
+  "devDependencies": {
+    "@12-apps/eslint-config": "1.20.0",
+    "@12-apps/observability-frontend": "1.7.0",
+    "@12-apps/typescript-config": "1.20.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "^4.5.2",
+    "eslint": "^9.39.1",
+    "jsdom": "^26.1.0",
+    "typescript": "5.9.2",
+    "vite": "^6.0.0",
+    "vitest": "^3.2.4"
+  }
+}

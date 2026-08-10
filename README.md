@@ -7,28 +7,38 @@ the subsystems most apps need wired up and **switched off by default**.
 
 ```
 apps/
-  api/       # Hono on @hono/node-server — /api/** and /health, no pages
-  spa/       # Vite + React 19 + react-router-dom
-  events/    # the WebSocket gateway, in its own process
+  api/          # Hono on @hono/node-server — /api/** and /health, no pages
+  client/       # customer-facing SPA        (Vite + React 19 + react-router)
+  admin/        # tenant backoffice          (same stack)
+  super-admin/  # platform backoffice        (same stack)
+  events/       # the WebSocket gateway, in its own process
 packages/
-  features/  # the flag names and the parser, shared by all three
+  features/     # the flag names and the parser, shared by every host
+  spa-shell/    # what the three SPAs share — placeholder for @12-apps/app-shell
 ```
 
-## Why three processes
+## Why this shape
 
-`api` and `spa` are the obvious split. `events` is separate because sockets are
-long-lived and connection-bound while API requests are short and CPU-bound — one
-process for both scales the wrong axis, and a deploy of the API would drop every
-open subscription. It also performs **no authorization**: it relays exactly the
-topics a connection names, which is much easier to keep true when the code that
-could authorize is in another process.
+**Three front ends, because three audiences.** A customer app, a tenant
+backoffice and a platform console have different authorization, different
+navigation and different deploy risk. `admin` gates on tenant permissions and
+`super-admin` on platform ones — the distinction `@12-apps/rbac` already models
+through the scope on every decision.
+
+**`events` is its own process** because sockets are long-lived and
+connection-bound while API requests are short and CPU-bound: one process for
+both scales the wrong axis, and a deploy of the API would drop every open
+subscription. It also performs **no authorization** — it relays exactly the
+topics a connection names, which stays true far more easily when the code that
+*could* authorize is somewhere else.
 
 ## Develop
 
 ```bash
 docker compose up -d      # (once packages/db exists — 12-33, 12-34)
 pnpm install
-pnpm dev                  # api :3000, spa :4001, events :3010
+pnpm dev                  # api :3000, client :4001, admin :3002,
+                          # super-admin :3004, events :3010
 pnpm lint
 pnpm check-types
 pnpm test
@@ -53,8 +63,13 @@ UI mounts; it ships inside the bundle and a reader can flip it.
 
 Subsystems whose package does not exist yet still have their exact mount written
 and **commented** at the call site — in `apps/api/src/app.ts` and
-`apps/spa/src/providers.tsx` — next to the ticket that ships them. Adopting one
-is installing the package and uncommenting a block.
+`packages/spa-shell/src/providers.tsx` — next to the ticket that ships them.
+Adopting one is installing the package and uncommenting a block.
+
+`packages/spa-shell` is deliberately thin. It is a placeholder for
+`@12-apps/app-shell` ([12-18](https://linear.app/12-apps/issue/12-18)), and
+growing a second private shell is the thing that ticket exists to prevent —
+anything bigger than a mount belongs in the package.
 
 ## Subsystem status
 
