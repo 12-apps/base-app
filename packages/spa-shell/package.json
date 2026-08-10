@@ -1,0 +1,41 @@
+{
+  "name": "@base/spa-shell",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "What the three SPAs share. A PLACEHOLDER for @12-apps/app-shell (12-18) — keep it thin.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./providers": "./src/providers.tsx",
+    "./api": "./src/api.ts",
+    "./features": "./src/features.ts"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings 0 .",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@12-apps/pwa": "1.5.0",
+    "@12-apps/rbac": "1.18.0",
+    "@12-apps/ui": "1.23.0",
+    "@base/features": "workspace:*",
+    "@tanstack/react-query": "^5.62.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0"
+  },
+  "devDependencies": {
+    "@12-apps/eslint-config": "1.20.0",
+    "@12-apps/typescript-config": "1.20.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "eslint": "^9.39.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "5.9.2",
+    "vite": "^6.0.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      // Vite INLINES these into the bundle, so they change the output and have
+      // to be part of the cache key. Without them turbo would happily hand back
+      // a build made with different flags — a cache hit that ships the wrong
+      // subsystems, which is far worse than a miss.
+      "env": ["API_ORIGIN", "VITE_FEATURE_*"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["API_ORIGIN", "VITE_FEATURE_*"]
+    }
+  }
+}

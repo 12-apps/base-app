@@ -1,0 +1,36 @@
+# Rendered by the nginx image's envsubst pass over /etc/nginx/templates/*.template,
+# which is how ${API_UPSTREAM} becomes a real address at container start. A plain
+# nginx.conf cannot read the environment, and hardcoding the API's address would
+# make this image environment-specific for a second, avoidable reason.
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+
+  # The browser only ever calls /api — in dev through Vite's proxy, here through
+  # this one. Same client code in both, and the SPA never learns where the API
+  # process lives.
+  location /api/ {
+    proxy_pass ${API_UPSTREAM};
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Hashed asset filenames are content-addressed, so they can be cached forever.
+  location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+  }
+
+  # index.html must NOT be cached: it is the only file naming the current asset
+  # hashes, so a cached copy pins a browser to chunks the next deploy deletes —
+  # the blank page that outlives the fix.
+  location = /index.html {
+    add_header Cache-Control "no-cache";
+  }
+
+  # Client-side routing: an unknown path is a route, not a 404.
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+}

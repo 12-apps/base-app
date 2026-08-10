@@ -1,0 +1,33 @@
+{
+  "name": "events",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The event socket, in its own process. Performs NO authorization — it relays exactly the topics a connection names, and the API decides who may name what.",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/events.mjs",
+    "lint": "eslint --max-warnings 0 .",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@base/features": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@12-apps/eslint-config": "1.20.0",
+    "@12-apps/typescript-config": "1.20.0",
+    "@types/node": "^22.15.3",
+    "@types/ws": "^8.5.13",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.39.1",
+    "tsx": "^4.19.2",
+    "typescript": "5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

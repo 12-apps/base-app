@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["npm"],
+  "semanticCommits": "enabled",
+  "branchPrefix": "chore/renovate-",
+  "prConcurrentLimit": 2,
+  "packageRules": [
+    {
+      "matchPackageNames": ["*"],
+      "enabled": false,
+      "description": "Only the @12-apps/* group is automated; everything else stays hand-managed."
+    },
+    {
+      "matchPackageNames": ["@12-apps/**"],
+      "enabled": true,
+      "groupName": "@12-apps packages",
+      "schedule": ["at any time"],
+      "description": "One grouped PR per batch of shared-packages releases; its CI run is the proof the bump is safe."
+    }
+  ],
+  "lockFileMaintenance": { "enabled": false }
+}

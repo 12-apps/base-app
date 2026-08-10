@@ -1,0 +1,62 @@
+name: Renovate
+
+# Keeps the @12-apps/* pins moving.
+#
+# The pins are EXACT (see package.json), so nothing raises them by itself and
+# the drift is invisible to CI: this repo's lockfile sat on @12-apps/ui 1.0.0
+# while 1.23.0 was published, because `"latest"` was resolved once and then
+# frozen. Exact pins plus this job is the pair that fixes it — the pin makes the
+# version reviewable, the job makes it move.
+#
+# The committed `renovate.json` scopes the run to the @12-apps/* group, which
+# arrives as ONE grouped PR whose CI run is the proof the bump is safe.
+#
+# TOKEN REQUIREMENT — read before wondering why no PR appears:
+#   A PR authored with the workflow's own GITHUB_TOKEN triggers NO pull_request
+#   workflows (GitHub's recursion guard), so the bump would land with zero check
+#   runs — worse than a stale pin. The job therefore requires a `RENOVATE_TOKEN`
+#   repo secret (fine-grained PAT or GitHub App installation token, with
+#   `contents: write` + `pull-requests: write` on this repo). Without it the job
+#   reports the gap and exits GREEN: a red job on every scheduled run only
+#   trains people to ignore CI. Configure the secret and the next run starts
+#   opening PRs with no further change here.
+
+on:
+  schedule:
+    # Weekday mornings UTC — early enough that a bump PR's CI is done before
+    # anyone reviews, rare enough not to spam the PR list.
+    - cron: "30 8 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renovate
+
+jobs:
+  renovate:
+    name: Open/refresh the @12-apps bump PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run self-hosted Renovate
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          # Read-only fallback for changelog/release-notes fetching, so the
+          # grouped PR's body links what actually changed.
+          GITHUB_COM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ONBOARDING: "false"
+          LOG_LEVEL: info
+        run: |
+          set -euo pipefail
+          if [ -z "${RENOVATE_TOKEN}" ]; then
+            echo "::warning title=RENOVATE_TOKEN not configured::The scheduled @12-apps bump cannot open PRs without it (a GITHUB_TOKEN-authored PR would get zero check runs). Add a RENOVATE_TOKEN repo secret — fine-grained PAT with contents+pull-requests write on this repo — and the next run takes it from there. Exiting green; see the header comment in .github/workflows/renovate.yml."
+            exit 0
+          fi
+          npx --yes renovate@41
