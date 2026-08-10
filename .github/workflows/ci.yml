@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & Type Check
+    name: Lint, Type Check & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,19 +24,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          # No pnpm cache until a lockfile is committed (setup-node's pnpm cache
-          # requires pnpm-lock.yaml to exist).
+          cache: pnpm
       - name: Install dependencies
         shell: bash
-        env:
-          # Reads the private @12-apps/* packages from npm (see .npmrc).
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -o pipefail
-          # No committed lockfile yet: resolve @12-apps/* fresh from npm and let
-          # CI generate it. Once a lockfile is committed, switch back to
-          # --frozen-lockfile for reproducible installs.
-          pnpm install --no-frozen-lockfile 2>&1 | tee install.log
+          # The @12-apps/* packages publish PUBLIC to registry.npmjs.org, so the
+          # install needs no token. The lockfile is committed, so it is frozen —
+          # an install that would change it is a bug in the diff, not something
+          # CI should paper over.
+          pnpm install --frozen-lockfile 2>&1 | tee install.log
+      - name: Lint
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm lint 2>&1 | tee lint.log
       - name: Type check
         shell: bash
         run: |
@@ -47,3 +49,10 @@ jobs:
         run: |
           set -o pipefail
           pnpm build 2>&1 | tee build.log
+
+  # NOTE: this repo does not yet consume 12-apps/ci's monorepo-static.yml /
+  # monorepo-tests.yml / quality.yml. Those are built for a pnpm workspace +
+  # turborepo (they run `turbo lint/check-types --affected` and restore
+  # per-package `.turbo` caches), and base-app is still a single package at the
+  # repo root. Giving it that shape is 12-27; adopting the pipeline on top of it
+  # is 12-10.

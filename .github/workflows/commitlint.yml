@@ -1,0 +1,25 @@
+name: Commit messages
+
+# The org's shared Conventional-Commits gate (12-apps/ci). It needs NOTHING in
+# this repo — no devDependency, no config file — because the workflow writes its
+# own rule set, so it can gate a repo that is only workflows and shell scripts.
+#
+# Both the commits and the PR title are linted, and that is not redundancy: with
+# `squash_merge_commit_title: COMMIT_OR_PR_TITLE`, GitHub takes the single
+# commit's subject when a PR has one commit and the PR title when it has
+# several. Either can be what lands on main, and what lands on main is
+# machine-read afterwards.
+
+on:
+  pull_request:
+    # `edited` is load-bearing — a malformed PR title fixed after the first run
+    # must re-trigger the check, or the fix never turns it green.
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    uses: 12-apps/ci/.github/workflows/commitlint.yml@v1

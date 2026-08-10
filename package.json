@@ -7,11 +7,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint --max-warnings 0 .",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@12-apps/ui": "latest",
+    "@12-apps/pwa": "1.5.0",
+    "@12-apps/rbac": "1.18.0",
+    "@12-apps/ui": "1.23.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -21,9 +23,12 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@12-apps/eslint-config": "1.20.0",
+    "@12-apps/typescript-config": "1.20.0",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "eslint": "^9.39.1",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@9.0.0",
