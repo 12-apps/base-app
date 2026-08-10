@@ -25,3 +25,4 @@ export function App(): JSX.Element {
 // stack-test: marker for the stacked-PR selection test (layer 2).
 // This layer touches ONLY apps/admin. Mid-stack, turbo diffs against layer 1
 // and sees just this package; stack-aware diffs against main and sees both.
+// stack-test: touch to fire a synchronize event after stacking.
