@@ -28,6 +28,13 @@ jobs:
       contents: read
       pull-requests: read # dorny/paths-filter reads the PR's file list
     uses: 12-apps/ci/.github/workflows/monorepo-static.yml@v1
+    with:
+      # On a stacked PR, select against the STACK's base rather than this PR's
+      # immediate base (the layer below). Without it both the path filter and
+      # `turbo --affected` see one layer only, so lint/type-check skip whatever
+      # the lower layers touched and the tier goes green having checked less.
+      # Inert off a stack.
+      stack-aware: true
 
   # Unit tests (turbo cache + vitest results-cache persistence) and build.
   tests:
@@ -38,6 +45,10 @@ jobs:
       contents: read
     uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@v1
     with:
+      # Must match the static tier: this tier selects with `turbo --affected`
+      # too, and a stack-aware gate feeding a stack-blind test tier is worse
+      # than neither — the pipeline still reports green, having tested less.
+      stack-aware: true
       vitest-cache-paths: |
         apps/api/node_modules/.vite/vitest
         apps/events/node_modules/.vite/vitest
