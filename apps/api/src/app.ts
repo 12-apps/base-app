@@ -1,11 +1,12 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-import { resolveFeatures, enabledFeatures } from "@base/features";
+import { resolveFeatures, enabledFeatures, type Features } from "@base/features";
 
+import { createAuth } from "./auth";
 import type { Env } from "./env";
 
 /** Flags for this process. Server-side, so `FEATURE_*` with no public prefix. */
-export const features = resolveFeatures(process.env, "FEATURE_");
+export const processFeatures = resolveFeatures(process.env, "FEATURE_");
 
 /**
  * The API surface.
@@ -18,8 +19,13 @@ export const features = resolveFeatures(process.env, "FEATURE_");
  * The commented blocks are not aspiration. They are the exact call each port
  * will land, kept here next to the flag so adopting one is installing the
  * package and uncommenting a block. Each names the ticket that ships it.
+ *
+ * `features` is a parameter rather than the module constant so a test can build
+ * an app with a subsystem on. Reading `process.env` at module scope would make
+ * the flags fixed for the lifetime of the module, which is right for the
+ * process and useless for a suite that has to cover both states.
  */
-export function createApp(env: Env): Hono {
+export function createApp(env: Env, features: Features = processFeatures): Hono {
   const app = new Hono();
 
   // The SPA is served from its own origin in dev (Vite on :4001) and proxied in
@@ -50,9 +56,19 @@ export function createApp(env: Env): Hono {
   app.get("/api/health", health);
 
   // ── Authentication (@12-apps/auth) — 12-12 ─────────────────────────────────
-  // if (features.auth) {
-  //   app.route("/api/auth", createApiAuth({ db, providers, adminEmails }).routes);
-  // }
+  // The first port to land for real. `createAuth` is called HERE rather than at
+  // module scope so a clone with the flag off never reads an auth variable.
+  //
+  // One `app.all` rather than a `route()`: the package answers the whole
+  // `/api/auth/**` tree — sign-in, callback, session, CSRF, sign-out, provider
+  // list — from a single `(Request) => Promise<Response>`, so there is nothing
+  // to enumerate here and no way for the host's route table to drift from the
+  // package's. `c.req.raw` is the untouched Request; handing it over whole is
+  // what keeps the OAuth callback's form POST and the cookies intact.
+  if (features.auth) {
+    const auth = createAuth();
+    app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+  }
 
   // ── RBAC (@12-apps/rbac) — 12-13 ───────────────────────────────────────────
   // if (features.rbac) {
