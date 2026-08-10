@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from "@12-apps/ui/mui/styles";
 import { CssBaseline } from "@12-apps/ui/mui/CssBaseline";
 import { RbacProvider } from "@12-apps/rbac/react";
 import { InstallInvite } from "@12-apps/pwa/react";
+import { createWebAuth } from "@12-apps/auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { features } from "./features";
@@ -12,6 +13,20 @@ import { features } from "./features";
 const theme = createTheme();
 
 const queryClient = new QueryClient();
+
+/**
+ * The browser half of `@12-apps/auth` (12-12).
+ *
+ * Built at module scope on purpose: `SessionProvider` and `useSession` are a
+ * matched pair sharing one React context, so building them per render would
+ * hand every render a new context and make `useSession` throw inside its own
+ * provider. `basePath` must match the API's mount — `/api/auth` is the default
+ * on both sides, and the SPA reaches it through the same proxy as every other
+ * `/api` call, so the session cookie is first-party.
+ */
+const { SessionProvider, useSession } = createWebAuth();
+
+export { useSession };
 
 export interface ProvidersProps {
   children: ReactNode;
@@ -48,6 +63,20 @@ export function Providers({
   permissions = [],
 }: ProvidersProps): JSX.Element {
   let tree = children;
+
+  // ── Authentication (@12-apps/auth) — 12-12 ─────────────────────────────────
+  // Mounted OUTERMOST of the flagged providers (it is applied first, so it ends
+  // up wrapping the rest): everything above reads who is signed in, and nothing
+  // auth needs comes from them. RBAC in particular is downstream — the
+  // permission set it narrows against is resolved for the session's actor.
+  //
+  // The provider only fetches `/api/auth/session`; with the API's own flag off
+  // that 404s and the session resolves to `null`, which is the same answer as a
+  // signed-out visitor. So a half-configured clone degrades to "nobody is
+  // signed in" rather than to a crash.
+  if (features.auth) {
+    tree = <SessionProvider>{tree}</SessionProvider>;
+  }
 
   // ── RBAC (@12-apps/rbac) — mountable today ─────────────────────────────────
   // A pure context over a resolved permission set, so it needs no backend; what
