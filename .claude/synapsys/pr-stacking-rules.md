@@ -46,6 +46,38 @@ Where it bites hard is `future-pay`, whose trigger is
 opened the ad-hoc way and had 0 check runs while every sibling PR in the same
 batch had 20-26. Cross-repo work is where this rule earns its keep.
 
+### A 403 here is usually the session PROXY, not GitHub
+
+This one has already produced a wrong conclusion once, so read it before you
+interpret any failed GitHub call. Claude Code sessions run behind an agent proxy
+that serves only a pinned set of GitHub operations. Two consequences:
+
+- **GraphQL is refused outright** — `POST /graphql` 403s on every query,
+  including `viewer { login }`, and introspection comes back with zero fields
+  rather than an error. The `stack` field on `PullRequest` is exposed *only* in
+  GraphQL, so **you cannot ask GitHub whether a PR is in a stack from here.**
+- **Merge and retarget calls can 403 for the same reason** — and that says
+  nothing whatsoever about stacking.
+
+Tell the two apart by the **body**, never by the status code:
+
+```jsonc
+// the session proxy — documentation_url points at anthropic.com
+{"message": "This GraphQL query is not enabled for this session …",
+ "documentation_url": "https://docs.anthropic.com/en/docs/claude-code/github-actions"}
+
+// GitHub itself — documentation_url points at docs.github.com
+{"message": "Resource not accessible by integration",
+ "documentation_url": "https://docs.github.com/rest/actions/workflow-jobs#…"}
+```
+
+A proxy 403 means "not available from here", so it is never evidence about the
+PR. The trap is to read `403 on merge` as *GitHub refused because this is a
+stack* and then "correct" this file on the strength of it. **Judge stack-ness by
+the check-run count**, which is observable: a based-on-branch PR sitting at 0
+checks in a repo whose workflow filters `branches: [main]` is the ad-hoc trap
+above, whatever the merge endpoint says.
+
 ### Nothing needs enabling
 
 > This is a workflow capability, not a gated feature. […] no setup or
@@ -93,6 +125,12 @@ This one bites automation, not humans. Any bot, script or MCP tool that merges
 programmatically through a legacy merge endpoint will fail on a stacked PR —
 check anything that merges for us before relying on stacks in a lane that
 auto-merges.
+
+From an agent session you likely cannot merge a stack at all: the asynchronous
+endpoint was refused with both `GITHUB_TOKEN` and `GH_PERSONAL_ACCESS_TOKEN`.
+Per the section above, check whether that refusal is the proxy's before
+reporting it as GitHub's — but either way, **say the merge did not happen**
+rather than inferring a cause. Ask the user to merge it.
 
 Merging the **bottom** PR merges it and automatically rebases the rest onto the
 base branch. Merging **mid-stack** merges everything below it; the ones above
