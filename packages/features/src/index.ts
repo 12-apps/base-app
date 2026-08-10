@@ -100,3 +100,7 @@ export function resolveFeatures(env: EnvSource, prefix: string): Features {
 export function enabledFeatures(features: Features): FeatureName[] {
   return FEATURE_NAMES.filter((name) => features[name]);
 }
+
+// stack-test: marker for the stacked-PR selection test (layer 1).
+// packages/features is a dependency of every app, so a stack-aware run must
+// select all 7 packages from the TOP layer; a stack-blind one selects 1.
