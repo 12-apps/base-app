@@ -1,0 +1,79 @@
+# The whole stack, one container per app.
+#
+# Five services rather than three, because each front end deploys, scales, rolls
+# back and caches independently — see the note in each SPA's Dockerfile.
+#
+# Nothing here is needed to develop: `pnpm dev` runs the same five processes on
+# the host with hot reload. This is what a deploy runs, and it is the fastest way
+# to check the production images actually work before pushing them anywhere.
+#
+# No database yet — `packages/db` is 12-33, and postgres/redis arrive with it
+# (12-34). Until then every subsystem is off and nothing needs one.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Feature flags are read at RUNTIME here, so this image is identical in
+      # every environment. The SPA images are not — see their `args` below.
+      # FEATURE_RBAC: "1"
+    ports:
+      - "3000:3000"
+
+  events:
+    build:
+      context: .
+      dockerfile: apps/events/Dockerfile
+    environment:
+      NODE_ENV: production
+      EVENTS_PORT: "3010"
+      # FEATURE_EVENTS: "1"
+    ports:
+      - "3010:3010"
+
+  # The three SPAs. Each bakes its VITE_FEATURE_* flags at BUILD time, which is
+  # why they take `args` and not `environment` — and why an SPA image is
+  # per-environment while the Node images are not. Changing a flag here means
+  # rebuilding the image, not restarting the container.
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+      args:
+        VITE_FEATURE_RBAC: ""
+        VITE_FEATURE_PWA: ""
+    environment:
+      API_UPSTREAM: http://api:3000
+    depends_on: [api]
+    ports:
+      - "8080:80"
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_FEATURE_RBAC: ""
+        VITE_FEATURE_PWA: ""
+    environment:
+      API_UPSTREAM: http://api:3000
+    depends_on: [api]
+    ports:
+      - "8081:80"
+
+  super-admin:
+    build:
+      context: .
+      dockerfile: apps/super-admin/Dockerfile
+      args:
+        VITE_FEATURE_RBAC: ""
+        VITE_FEATURE_PWA: ""
+    environment:
+      API_UPSTREAM: http://api:3000
+    depends_on: [api]
+    ports:
+      - "8082:80"

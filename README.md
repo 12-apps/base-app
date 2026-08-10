@@ -35,7 +35,6 @@ topics a connection names, which stays true far more easily when the code that
 ## Develop
 
 ```bash
-docker compose up -d      # (once packages/db exists — 12-33, 12-34)
 pnpm install
 pnpm dev                  # api :3000, client :4001, admin :3002,
                           # super-admin :3004, events :3010
@@ -44,6 +43,26 @@ pnpm check-types
 pnpm test
 pnpm build
 ```
+
+## Containers
+
+One image per app — five of them. The SPAs are separate containers even though
+they are static bundles, because they are three audiences: a backoffice fix
+should not rebuild or restart the customer app, and rolling one back must not
+roll back the others.
+
+```bash
+docker compose up --build      # client :8080, admin :8081, super-admin :8082
+                               # api :3000, events :3010
+```
+
+Each SPA container serves its bundle and proxies `/api` to the `api` container,
+so the browser talks to one origin exactly as it does through Vite's dev proxy.
+
+**An SPA image is per-environment.** Vite inlines `VITE_FEATURE_*` at build
+time, so the same bundle cannot be promoted from staging to production with
+different flags — hence `args` rather than `environment` on those services. The
+Node images read `FEATURE_*` at runtime and are identical everywhere.
 
 No token is needed to install: the `@12-apps/*` packages publish **public** to
 `registry.npmjs.org`.

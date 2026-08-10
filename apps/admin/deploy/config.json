@@ -1,0 +1,5 @@
+{
+  "$schema": "https://raw.githubusercontent.com/12-apps/ci/v1/.github/deploy/app.schema.json",
+  "name": "admin",
+  "targets": []
+}
