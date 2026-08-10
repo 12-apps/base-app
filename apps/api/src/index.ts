@@ -4,7 +4,7 @@
  */
 import { serve } from "@hono/node-server";
 
-import { createApp, features } from "./app";
+import { createApp, processFeatures } from "./app";
 import { EnvError, readEnv, type Env } from "./env";
 import { enabledFeatures } from "@base/features";
 
@@ -22,7 +22,7 @@ function main(): void {
   }
 
   const server = serve({ fetch: createApp(env).fetch, port: env.port }, (info) => {
-    const on = enabledFeatures(features);
+    const on = enabledFeatures(processFeatures);
     process.stdout.write(
       `api listening on http://localhost:${info.port} ` +
         `(${on.length > 0 ? on.join(", ") : "no subsystems enabled"})\n`,
