@@ -2,57 +2,72 @@ name: CI
 
 on:
   pull_request:
+    branches: [main]
+  # Post-merge full-suite safety net. Every PR lane is incremental
+  # (paths-filtered, turbo --affected), which is fast but can miss cross-file
+  # breakage. On push the shared pipeline runs the WHOLE suite with every filter
+  # forced true — that is what makes PR-time selection safe to trust.
   push:
     branches: [main]
 
+# Reusable workflows cannot define workflow-level concurrency — the caller must.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
-  build:
-    name: Lint, Type Check & Build
+  # Changes filter + `turbo lint/check-types --affected` + actionlint, with
+  # cross-run .turbo caches. Everything heavy gates on this tier's outputs.
+  static:
+    name: Static
+    permissions:
+      contents: read
+      pull-requests: read # dorny/paths-filter reads the PR's file list
+    uses: 12-apps/ci/.github/workflows/monorepo-static.yml@v1
+
+  # Unit tests (turbo cache + vitest results-cache persistence) and build.
+  tests:
+    name: Tests
+    needs: static
+    if: needs.static.outputs.code == 'true'
+    permissions:
+      contents: read
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@v1
+    with:
+      vitest-cache-paths: |
+        apps/api/node_modules/.vite/vitest
+        apps/spa/node_modules/.vite/vitest
+        apps/events/node_modules/.vite/vitest
+
+  # Require ONLY this job in the branch ruleset.
+  #
+  # `static` must be listed even though `tests` already depends on it: if the
+  # static tier FAILS, its dependents go `skipped` rather than `failure`, and an
+  # aggregation watching only the dependents would pass with zero tests run.
+  ci-success:
+    name: CI Success
+    if: always()
+    needs: [static, tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - name: Install dependencies
-        shell: bash
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          set -o pipefail
-          # The @12-apps/* packages publish PUBLIC to registry.npmjs.org, so the
-          # install needs no token. The lockfile is committed, so it is frozen —
-          # an install that would change it is a bug in the diff, not something
-          # CI should paper over.
-          pnpm install --frozen-lockfile 2>&1 | tee install.log
-      - name: Lint
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm lint 2>&1 | tee lint.log
-      - name: Type check
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm check-types 2>&1 | tee typecheck.log
-      - name: Build
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm build 2>&1 | tee build.log
+          set -euo pipefail
+          echo "job results: $RESULTS"
+          if printf '%s' "$RESULTS" | grep -qwE 'failure|cancelled'; then exit 1; fi
 
-  # NOTE: this repo does not yet consume 12-apps/ci's monorepo-static.yml /
-  # monorepo-tests.yml / quality.yml. Those are built for a pnpm workspace +
-  # turborepo (they run `turbo lint/check-types --affected` and restore
-  # per-package `.turbo` caches), and base-app is still a single package at the
-  # repo root. Giving it that shape is 12-27; adopting the pipeline on top of it
-  # is 12-10.
+# Not adopted yet, and each for a reason rather than an oversight:
+#
+# - `quality.yml` needs consumer-side configs and `quality:*` scripts that this
+#   repo does not have (12-36). Adopting it before they exist just fails.
+# - `nextjs-prod-smoke.yml` has nothing to smoke — there is no Next.js app, by
+#   design. The equivalent here is booting `apps/api` and hitting `/health`,
+#   plus a `vite preview` load of `apps/spa` (12-10).
+# - `mcp-contract` / `rbac-coverage` / `entitlements-coverage` gate surfaces that
+#   arrive with their ports (12-13, 12-19, 12-23).
+# - `cd.yml` needs Dockerfiles and per-app deploy descriptors (12-38).

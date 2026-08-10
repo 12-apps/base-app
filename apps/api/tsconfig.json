@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // The base config is NodeNext, which demands explicit `.js` extensions on
+    // relative imports. These apps are BUNDLED by esbuild (see scripts/build.mjs
+    // — the @12-apps/* packages ship raw TypeScript, so a Node host has to
+    // bundle them), and a bundler resolves extensionless. Telling tsc the truth
+    // about the resolver is what keeps the two agreeing.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.mjs"]
+}
