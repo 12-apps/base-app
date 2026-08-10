@@ -21,3 +21,7 @@ export function App(): JSX.Element {
     </Providers>
   );
 }
+
+// stack-test: marker for the stacked-PR selection test (layer 2).
+// This layer touches ONLY apps/admin. Mid-stack, turbo diffs against layer 1
+// and sees just this package; stack-aware diffs against main and sees both.
