@@ -26,3 +26,4 @@ export function App(): JSX.Element {
 // This layer touches ONLY apps/admin. Mid-stack, turbo diffs against layer 1
 // and sees just this package; stack-aware diffs against main and sees both.
 // stack-test: touch to fire a synchronize event after stacking.
+// stack-test: retrigger after the path-filter fix (ci#54).
