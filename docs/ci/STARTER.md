@@ -1,15 +1,16 @@
 # Starting a React application with the optimized CI baseline
 
-Source baseline: [12-apps/ci v2.49.0](https://github.com/12-apps/ci/releases/tag/v2.49.0),
-commit `ea88024608cb8c9f5ce8fe655fb64e6866bbf469`, and the validated
+Source baseline: [12-apps/ci v2.49.2](https://github.com/12-apps/ci/releases/tag/v2.49.2),
+commit `dd17e765c6d3799cfc9a3cbeebf3cf640d368908`, and the validated
 [Future Pay #2273](https://github.com/12-apps/future-pay/pull/2273) safety work.
 The reusable workflow entry points are commit-pinned. Their internal `@v2`
 actions still follow the supported major; central execution identity invalidates
 stored verdicts when those downloaded sources change.
 
-The full-push executed-test guard in central PR #157 is still a release gate for
-this adoption. v2.49.0 supplies the explicit runner override; it does not close
-the all-skipped full-push gap tracked by E002 in the experiment ledger.
+This release includes central PR #157’s executed-test guard for full push,
+dispatch and scheduled runs, as well as explicit caller runner selection.
+The consumer still supplies report-producing full commands and verifies a
+normal main push after merge; see E002/E003 in the experiment ledger.
 
 ## New repository checklist
 

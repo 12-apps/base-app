@@ -232,3 +232,46 @@ After the pin update, 24/24 local contracts passed again (209.919 ms), Actionlin
 and whitespace validation passed. Hosted consumer validation is still required.
 This runner release deliberately excludes central #157; E002's full-push guard
 remains a separate adoption/merge gate and is not claimed fixed by v2.49.0.
+
+## E004 — released full-push guard, real scheduler proof (2026-09-30, 12-10)
+
+Final engine baseline is [v2.49.2](https://github.com/12-apps/ci/releases/tag/v2.49.2),
+commit `dd17e765c6d3799cfc9a3cbeebf3cf640d368908`. The annotated release tag was
+verified to resolve to that commit. It includes central #157 after the Future Pay
+full-command JUnit prerequisite was merged, and retains E003's runner override.
+This release replaces the earlier pending E002/E003 statements above.
+
+### Actual push-event negative and positive controls
+
+A bounded [probe branch](https://github.com/12-apps/base-app/tree/ci/12-10-full-signal-proof)
+at `6e5834629a78d15d62a9d30ef775840a7c7e04bb` added only a push-triggered
+experiment workflow and two real Vitest fixtures. It is not part of PR #11 and
+is not merged into the starter. The PR-only command deliberately throws, so a
+mistaken event-selection path cannot pass the proof.
+
+[Push run 36748491556](https://github.com/12-apps/base-app/actions/runs/36748491556)
+completed with exactly the expected outcomes:
+
+- Old v2.49.0 [all-skipped unit job](https://github.com/12-apps/base-app/actions/runs/36748491556/job/110000757907)
+  passed with one skipped test and no executed case, reproducing E002 on the real
+  push scheduler.
+- New v2.49.2 [all-skipped unit job](https://github.com/12-apps/base-app/actions/runs/36748491556/job/110000780915)
+  reached the executed-test guard and failed there after Vitest itself returned
+  success. The report contained zero executed cases.
+- New v2.49.2 [positive unit job](https://github.com/12-apps/base-app/actions/runs/36748491556/job/110000762309)
+  passed with one executed case and one skipped case. The guard counted only the
+  single executed case.
+- The [experiment verifier](https://github.com/12-apps/base-app/actions/runs/36748491556/job/110000961026)
+  passed, asserting old-success/fixed-failure/fixed-success. The overall run is
+  intentionally red because the negative lane must fail; it is not presented
+  as a green production workflow. All seven executed jobs used the GitHub Actions
+  runner group with `ubuntu-latest`.
+
+### Final consumer validation
+
+After adopting the immutable guard release, 24/24 local root contracts passed
+(194.653 ms), Actionlint and whitespace checks passed. The exact released parser
+accepted the fresh root report (24 cases) and the previously executed app reports
+(27 cases across five files); reading those files is not a fresh app execution.
+Final PR-head hosted CI and the normal post-merge main full suite are recorded in
+the PR's experiment comments as they complete.

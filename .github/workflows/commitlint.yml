@@ -22,6 +22,6 @@ permissions:
 
 jobs:
   commitlint:
-    uses: 12-apps/ci/.github/workflows/commitlint.yml@ea88024608cb8c9f5ce8fe655fb64e6866bbf469 # v2.49.0
+    uses: 12-apps/ci/.github/workflows/commitlint.yml@dd17e765c6d3799cfc9a3cbeebf3cf640d368908 # v2.49.2
     with:
       runner: ubuntu-latest
