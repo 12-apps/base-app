@@ -89,3 +89,42 @@ The first base-app PR stays draft until the focused
 reviewed and released, then its verified pin is adopted here. Successful PR CI
 alone is not evidence that this full-push gap is closed. The remaining base-app
 review found no additional blocker; runtime/cache claims remain bounded by E001.
+
+### Central correction evidence
+
+The focused engine PR is [12-apps/ci #157](https://github.com/12-apps/ci/pull/157),
+initial reviewed head `32cdc43b2c5ce54e5db0e9edce5bc963b8ea9a89`.
+The parser itself is unchanged; the conditions and matrix report wiring are fixed.
+
+- Existing targeted baseline: 244/244 passing. Corrected targeted set: 276/276.
+- New controls executed against the old YAML: 31 cases, 15 pass and 16 fail
+  (12 full-event false approvals plus four wiring assertions). Corrected YAML:
+  31/31 passing. The harness executes real node:test JUnit and the central parser
+  under the workflow conditions, rather than checking only text matches.
+- Real Vitest 3.2.7: all-skipped runner exit 0 / signal guard exit 1; one executed
+  case plus one skipped case: runner exit 0 / guard exit 0.
+- Independent central review reported no findings. actionlint and diff checks
+  passed. Hosted Self Tests: [run 36728972179](https://github.com/12-apps/ci/actions/runs/36728972179)
+  (terminal result must be checked before release/adoption).
+- Rejected first node:test harness attempt: inherited `NODE_TEST_CONTEXT` made
+  the subprocess emit internal test output rather than JUnit. Removing that
+  variable from the subprocess environment corrected the harness; rejected
+  output is not counted as evidence. No production parser change was needed.
+- Consumer prerequisite before advancing the shared major: Future Pay's full
+  unit command must emit JUnit, and Turbo must restore those reports on cache hits.
+  A full-event guard must not be released before its existing consumers can
+  satisfy the contract.
+
+### Additional starter cache evidence
+
+- Real Turbo dry-run input mutation: `VITE_FEATURE_AUTH` changed the build hash
+  for all three SPAs. Editing `tsconfig.base.json`, `.node-version` or the CI
+  workflow changed all 12 executable build/type-check task hashes.
+- Hosted [CI run 36727638615, attempt 2](https://github.com/12-apps/base-app/actions/runs/36727638615/attempts/2)
+  re-ran the original `d7dde643` head. Lint and Build logged exact lane-verdict
+  cache hits and skipped installation/work; Unit Plan reused its earlier
+  passing verdict and created no unit shard. The first attempt executed 27
+  cases. Root contracts still executed and CI Success passed. See the
+  [experiment comment](https://github.com/12-apps/base-app/pull/11#issuecomment-5913272878).
+  This is observed reuse, not a claimed time-savings percentage. A central
+  implementation change must invalidate these old verdict identities.
