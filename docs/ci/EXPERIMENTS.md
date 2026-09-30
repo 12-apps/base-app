@@ -128,3 +128,36 @@ The parser itself is unchanged; the conditions and matrix report wiring are fixe
   [experiment comment](https://github.com/12-apps/base-app/pull/11#issuecomment-5913272878).
   This is observed reuse, not a claimed time-savings percentage. A central
   implementation change must invalidate these old verdict identities.
+
+### Hosted central result verified
+
+Central PR #157 at `32cdc43b2c5ce54e5db0e9edce5bc963b8ea9a89` completed with
+8 successful checks and one intentional skip, no pending or failing checks.
+[Self Tests job 109933164052](https://github.com/12-apps/ci/actions/runs/36728972179/job/109933164052)
+logged 31/31 full-suite wiring tests and 22/22 signal-guard tests, including all
+16 lane/event/shard combinations. Example executed case: unit push with three
+shards rejects zero execution and accepts one executed case; integration dispatch
+has the same positive/negative proof. CodeQL and its three analyzers passed.
+These are hosted runner/parser/condition tests, not a claim that a real consumer
+push workflow has already exercised the corrected scheduler path. The release
+still waits for the existing Future Pay full-command/JUnit-cache prerequisite.
+
+### Central reconciliation and final pre-release proof
+
+While E002 was under review, [ci #158](https://github.com/12-apps/ci/pull/158)
+merged a separate XML parser fix for `>` inside quoted attributes. E002 was
+reconciled onto that new main without reverting the parser fix. The earlier
+v2.48.3 release contains #158 only; it is not evidence that #157 was released.
+
+Final reviewed ci #157 head: `4f101f09dff7c5a18178bdc4961a3d58ed3a4804`.
+[Self Tests run 36734581363](https://github.com/12-apps/ci/actions/runs/36734581363),
+[Action Scripts job 109952804649](https://github.com/12-apps/ci/actions/runs/36734581363/job/109952804649),
+and CodeQL job `109952989287` completed successfully. Hosted logs confirm
+24/24 signal-guard tests and 31/31 full-suite wiring tests. Local reconciled
+validation passed 278/278; independent review passed 55/55 with no findings.
+
+Earlier baseline/fix counts remain above as historical observations, not the
+final reconciled count. This proves the current engine implementation and its
+runner/report/condition controls. A full consumer push is still pending rollout.
+Future Pay's final prerequisite head `03a3440d` is being checked separately;
+neither that merge nor the release is assumed from the green central PR.
