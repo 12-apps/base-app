@@ -119,3 +119,12 @@ A docs site, Gherkin journeys, the e2e affected selector and its map, the
 payments LOC burn-down, MCP store-compliance artifacts, the demo-store fixtures,
 and the pt-BR user-facing-language rule (12-40). Those are Future-Pay's, and
 shipping them as a template teaches a new app the wrong things.
+
+
+## CI baseline refresh — 2026-09-30
+
+The static/tests/commitlint callers now use validated v2.48.2 entry points, with
+strict test evidence, complete-tree verdict fingerprints and consumer contract
+tests. See [the starter checklist](ci/STARTER.md) for exactly what is inherited
+and the still-unconfigured domain-specific and quality lanes. The earlier audit
+above is historical, not a claim that all its package statuses were re-audited.
