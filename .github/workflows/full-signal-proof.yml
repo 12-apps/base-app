@@ -1,0 +1,52 @@
+name: Full-push signal proof
+on:
+  push:
+    branches: [ci/12-10-full-signal-proof]
+permissions:
+  contents: read
+jobs:
+  old-all-skipped:
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@ea88024608cb8c9f5ce8fe655fb64e6866bbf469
+    with:
+      runner: ubuntu-latest
+      node-version: '24'
+      run-build: false
+      unit-test-command: "node -e \"throw new Error('PR command must not run on push')\""
+      unit-full-command: pnpm --dir apps/api exec vitest run ci-signal-proof/skipped.test.ts --reporter=default --reporter=junit --outputFile.junit=reports/probe.xml
+      unit-junit-reports: apps/api/reports/probe.xml
+  fixed-all-skipped:
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@dd17e765c6d3799cfc9a3cbeebf3cf640d368908
+    with:
+      runner: ubuntu-latest
+      node-version: '24'
+      run-build: false
+      unit-test-command: "node -e \"throw new Error('PR command must not run on push')\""
+      unit-full-command: pnpm --dir apps/api exec vitest run ci-signal-proof/skipped.test.ts --reporter=default --reporter=junit --outputFile.junit=reports/probe.xml
+      unit-junit-reports: apps/api/reports/probe.xml
+  fixed-executed:
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@dd17e765c6d3799cfc9a3cbeebf3cf640d368908
+    with:
+      runner: ubuntu-latest
+      node-version: '24'
+      run-build: false
+      unit-test-command: "node -e \"throw new Error('PR command must not run on push')\""
+      unit-full-command: pnpm --dir apps/api exec vitest run ci-signal-proof/executed.test.ts --reporter=default --reporter=junit --outputFile.junit=reports/probe.xml
+      unit-junit-reports: apps/api/reports/probe.xml
+  verify-experiment:
+    if: always()
+    needs: [old-all-skipped, fixed-all-skipped, fixed-executed]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the expected positive and negative outcomes
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const jobs = JSON.parse(process.env.NEEDS);
+          assert.equal(jobs['old-all-skipped'].result, 'success');
+          assert.equal(jobs['fixed-all-skipped'].result, 'failure');
+          assert.equal(jobs['fixed-executed'].result, 'success');
+          console.log('Verified: old full push accepts zero execution; fixed full push rejects it and accepts a real executed case.');
+          NODE
