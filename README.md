@@ -105,7 +105,7 @@ Tracked by Linear epic [12-9](https://linear.app/12-apps/issue/12-9).
 `monorepo-tests`), and `commitlint.yml` its Conventional-Commits gate. Make
 **`CI Success`** the only required check — it aggregates the rest, including the
 static tier, whose failure would otherwise leave its dependents `skipped` rather
-than `failure`. The optimized baseline uses the validated v2.48.2 entry-point
+than `failure`. The optimized baseline uses the validated v2.49.0 entry-point
 commit, strict executed-test reports, complete-tree cache provenance and
 always-run consumer contract tests. Start with the [new React repository
 checklist](docs/ci/STARTER.md) and record CI changes in the
@@ -114,6 +114,11 @@ checklist](docs/ci/STARTER.md) and record CI changes in the
 Use Node 24 (`.node-version`) and the declared `pnpm@9.0.0`. Run
 `pnpm test:ci-contracts` for dependency-free CI regressions and `pnpm test:ci`
 for the report-producing full test command used on main.
+
+This public repository runs CI on standard GitHub-hosted `ubuntu-latest` runners.
+Reusable callers explicitly override organization runner defaults; CI caches and
+artifacts stay in GitHub Actions. No AWS fleet, AWS storage or paid infrastructure
+is configured by this starter.
 
 ## Dependency pins
 

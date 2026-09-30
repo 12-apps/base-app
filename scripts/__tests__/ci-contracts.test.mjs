@@ -11,7 +11,7 @@ import { hasTestTasks, selectTestScope } from '../ci-unit.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (path) => readFileSync(join(root, path), 'utf8');
 const json = (path) => JSON.parse(read(path));
-const pin = 'be3300542208ebab5b30a75f58d018518f9d3459';
+const pin = 'ea88024608cb8c9f5ce8fe655fb64e6866bbf469';
 const valid = (code = 'true') => ({
   static: { result: 'success', outputs: { code } },
   contracts: { result: 'success' },

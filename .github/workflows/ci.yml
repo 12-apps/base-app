@@ -22,8 +22,10 @@ jobs:
       contents: read
       pull-requests: read
       actions: read # required by the reusable workflow's retry-gate declaration
-    uses: 12-apps/ci/.github/workflows/monorepo-static.yml@be3300542208ebab5b30a75f58d018518f9d3459 # v2.48.2
+    uses: 12-apps/ci/.github/workflows/monorepo-static.yml@ea88024608cb8c9f5ce8fe655fb64e6866bbf469 # v2.49.0
     with:
+      # Public open-source CI must not inherit the organization's AWS fleet.
+      runner: ubuntu-latest
       node-version: '24'
       stack-aware: true
       # Hash EVERY tracked merge-tree input. The engine adds runtime, source,
@@ -71,7 +73,7 @@ jobs:
           mkdir -p reports
           node --test --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=reports/root.xml scripts/__tests__/*.test.mjs
       - name: Require executed root tests
-        uses: 12-apps/ci/.github/actions/vitest-signal-guard@be3300542208ebab5b30a75f58d018518f9d3459 # v2.48.2
+        uses: 12-apps/ci/.github/actions/vitest-signal-guard@ea88024608cb8c9f5ce8fe655fb64e6866bbf469 # v2.49.0
         with:
           reports: reports/root.xml
           lane: CI contracts
@@ -82,8 +84,10 @@ jobs:
     if: needs.static.outputs.code == 'true'
     permissions:
       contents: read
-    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@be3300542208ebab5b30a75f58d018518f9d3459 # v2.48.2
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@ea88024608cb8c9f5ce8fe655fb64e6866bbf469 # v2.49.0
     with:
+      # Public open-source CI must not inherit the organization's AWS fleet.
+      runner: ubuntu-latest
       node-version: '24'
       stack-aware: true
       unit-test-command: node scripts/ci-unit.mjs --affected

@@ -1,11 +1,15 @@
 # Starting a React application with the optimized CI baseline
 
-Source baseline: [12-apps/ci v2.48.2](https://github.com/12-apps/ci/releases/tag/v2.48.2),
-commit `be3300542208ebab5b30a75f58d018518f9d3459`, and the validated
+Source baseline: [12-apps/ci v2.49.0](https://github.com/12-apps/ci/releases/tag/v2.49.0),
+commit `ea88024608cb8c9f5ce8fe655fb64e6866bbf469`, and the validated
 [Future Pay #2273](https://github.com/12-apps/future-pay/pull/2273) safety work.
 The reusable workflow entry points are commit-pinned. Their internal `@v2`
 actions still follow the supported major; central execution identity invalidates
 stored verdicts when those downloaded sources change.
+
+The full-push executed-test guard in central PR #157 is still a release gate for
+this adoption. v2.49.0 supplies the explicit runner override; it does not close
+the all-skipped full-push gap tracked by E002 in the experiment ledger.
 
 ## New repository checklist
 
@@ -24,9 +28,12 @@ stored verdicts when those downloaded sources change.
    counts and `CI Success` on that exact commit. Require `CI Success` and the
    existing commit-message gate in the repository's ruleset. This code does not
    enable branch protection or prove that a ruleset exists.
-5. Only configure deployment providers, runner labels, optional feature secrets
-   or paid infrastructure after the application chooses them. The starter's
-   existing Dockerfiles and descriptors are examples, not an automatic deployment.
+5. Keep this public repository on standard GitHub-hosted `ubuntu-latest` runners.
+   Set `runner: ubuntu-latest` on every reusable CI caller so an organization-wide
+   `CI_RUNNER` cannot redirect it to a self-hosted AWS fleet. Local jobs also use
+   literal `runs-on: ubuntu-latest`. Do not configure AWS deployment/storage,
+   a paid remote cache or paid infrastructure for this open-source starter.
+   Existing Dockerfiles and descriptors do not trigger any deployment.
 6. Preserve `push: [main]` as the full-suite safety net. If changing the default
    branch, update both CI triggers and the central `default-branch` test input.
 7. Follow the experiment protocol before widening any optimization. Copy an
@@ -34,6 +41,8 @@ stored verdicts when those downloaded sources change.
 
 ## What is inherited
 
+- Explicit GitHub-hosted runner choices, GitHub Actions cache/artifact storage
+  and no AWS credentials, fleet, deployment or external remote-cache wiring
 - Fail-fast static tier, package-level affected lint/types/tests/build, matching
   stack-aware bases and PR cancellation without cancelling the main safety net
 - pnpm dependency cache, Turbo cache restoration, PR read-only Turbo cache usage,

@@ -161,3 +161,74 @@ final reconciled count. This proves the current engine implementation and its
 runner/report/condition controls. A full consumer push is still pending rollout.
 Future Pay's final prerequisite head `03a3440d` is being checked separately;
 neither that merge nor the release is assumed from the green central PR.
+
+## E003 — public CI stays on GitHub-hosted runners (2026-09-30, 12-10)
+
+Requirement: base-app is open source and must not use the AWS cloud. This covers
+CI runners, cache/artifact storage and deployment wiring; the React/Vite/Hono
+applications are unchanged.
+
+### Baseline observation and gap
+
+- On original [CI run 36727638615](https://github.com/12-apps/base-app/actions/runs/36727638615),
+  all 18 executed job entries across attempts 1 and 2 reported `ubuntu-latest`
+  and the `GitHub Actions` runner group. Skipped jobs are not runner evidence.
+- At pre-change head `59d8ee3f86c6bccebbf41349eafc07af78b030e3`, all ten executed
+  jobs in [CI run 36735923689](https://github.com/12-apps/base-app/actions/runs/36735923689)
+  and the [commit-message job](https://github.com/12-apps/base-app/actions/runs/36735923632)
+  also used the GitHub Actions runner group with `ubuntu-latest`.
+  [Scheduled Renovate](https://github.com/12-apps/base-app/actions/runs/36734479170)
+  used the same standard hosted runner. Its earlier step name “self-hosted
+  Renovate” described Renovate's execution mode, not an AWS/self-hosted runner.
+- The central workflows nevertheless selected `vars.CI_RUNNER || 'ubuntu-latest'`.
+  These successful executions show the effective historical assignment, not an
+  audit of organization/repository variable settings or a guarantee that an
+  inherited override could never redirect a later run. The available GitHub
+  connection does not expose variable administration; no settings were changed.
+
+### Enforcement and controls
+
+The consumer now supplies `runner: ubuntu-latest` to static, tests and commitlint.
+The shared engine owns and tests input-over-variable precedence. Root contracts,
+CI Success and Renovate already use literal hosted runner labels. The consumer
+suite checks all six job declarations, rejects removal of any explicit choice,
+rejects self-hosted/AWS/inherited-variable choices, and rejects AWS action/storage,
+secret inheritance and external Turbo remote-cache wiring.
+
+Local dependency-free contracts: `node --test scripts/__tests__/*.test.mjs`
+passed 24/24, zero skipped (221.893 ms test-runner duration). The four new tests
+include six removed-selector mutations, nine unsafe-selector mutations and five
+cloud/cache-wiring mutations, each expected to fail the policy assertion. These
+are controlled test fixtures; no AWS job or infrastructure was started.
+
+Additional local checks (Node 24.19.0, exact pnpm 9.0.0):
+
+- Real unit execution passed 27 cases across five reports, five task cache misses,
+  Turbo 5.409 s; the central report parser confirmed all 27 executed cases.
+- A first static/build run overlapped the unit run and was killed with exit 137
+  during `super-admin` type checking (10/19 tasks completed, no cache hits).
+  This failed run is not counted as a pass or used for a timing comparison.
+- Retried `pnpm turbo run lint check-types build --concurrency=2 --force --summarize`
+  after unit completion: all 19 tasks executed successfully, no cache hits,
+  Turbo 19.481 s. Bounded local concurrency required no workflow change.
+- Actionlint 1.7.7 and `git diff --check` passed. Peer review of the caller and
+  runner-contract delta found no blocker; final release compatibility is still
+  a separate check.
+
+Release-pin validation, final-head hosted CI and the post-merge full push remain
+required before this change is complete. No GitHub billing savings are claimed.
+
+### Released runner API adopted
+
+[ci #161](https://github.com/12-apps/ci/pull/161) was normally released as
+[v2.49.0](https://github.com/12-apps/ci/releases/tag/v2.49.0), commit
+`ea88024608cb8c9f5ce8fe655fb64e6866bbf469`. This consumer pins that immutable
+commit in all reusable callers and the root signal action. Inspected the released
+sources: static, tests and commitlint declare optional `runner` and all 15 of
+their job declarations use `inputs.runner || vars.CI_RUNNER || 'ubuntu-latest'`.
+The explicit consumer choice therefore precedes an inherited AWS fleet label.
+
+After the pin update, 24/24 local contracts passed again (209.919 ms), Actionlint
+and whitespace validation passed. Hosted consumer validation is still required.
+This runner release deliberately excludes central #157; E002's full-push guard
+remains a separate adoption/merge gate and is not claimed fixed by v2.49.0.
