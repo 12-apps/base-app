@@ -63,3 +63,29 @@ a live cache hit has been observed and checked against the exact inputs.
   checks are documented as repository setup, not represented as already enabled.
 
 Timing is one local observation on this machine, not a forecast of runner cost.
+
+## E002 — full-suite execution signal gap (2026-09-30, FUT-2098)
+
+Independent adversarial review of E001 found one blocker in the inherited
+central workflow: v2.48.2 runs the application JUnit signal guard only for
+`pull_request`. Full push/dispatch/schedule runs can pass when every case skips,
+although strict Vitest rejects a suite with no files. Removing
+`--passWithNoTests` does not close an all-skipped suite.
+
+Reproduced with installed Vitest 3.2.7: a real `test.skip` case and
+`vitest run --reporter=default --reporter=junit --outputFile.junit=...` exited 0,
+reporting one skipped test. Running the existing central parser on that report
+exited 1 with `lane executed zero tests`. The parser is correct; the workflow
+condition prevents it from running. No report-parser copy is needed here.
+
+Controls: E001's real five-suite reports have 27 executed cases and pass; missing,
+zero, skipped and truncated fixture reports fail. The proposed central fix must
+cover unsharded and matrix unit/integration lanes on all events, including report
+staging and post-matrix signal jobs. Zero planned work remains a legitimate skip;
+label bypass remains PR-only so it cannot weaken the full-suite safety net.
+
+The first base-app PR stays draft until the focused
+[FUT-2098](https://linear.app/12-apps/issue/FUT-2098) engine change is tested,
+reviewed and released, then its verified pin is adopted here. Successful PR CI
+alone is not evidence that this full-push gap is closed. The remaining base-app
+review found no additional blocker; runtime/cache claims remain bounded by E001.
