@@ -12,8 +12,7 @@
   },
   "scripts": {
     "lint": "eslint --max-warnings 0 .",
-    "check-types": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@12-apps/pwa": "1.5.0",

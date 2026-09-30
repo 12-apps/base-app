@@ -20,3 +20,6 @@ These are seeded from `12-apps/future-pay`, which learned them the expensive
 way. A memory here is kept only when it is true of THIS repo — where the two
 repos differ (PR stacking is the live example), the difference is the point of
 the memory rather than a detail in it.
+
+- `ci-work-must-be-tested.md`: CI changes require positive/negative evidence,
+  measured outcomes, a documented PR and a safe authorized merge.

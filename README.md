@@ -35,7 +35,7 @@ topics a connection names, which stays true far more easily when the code that
 ## Develop
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev                  # api :3000, client :4001, admin :3002,
                           # super-admin :3004, events :3010
 pnpm lint
@@ -105,7 +105,20 @@ Tracked by Linear epic [12-9](https://linear.app/12-apps/issue/12-9).
 `monorepo-tests`), and `commitlint.yml` its Conventional-Commits gate. Make
 **`CI Success`** the only required check — it aggregates the rest, including the
 static tier, whose failure would otherwise leave its dependents `skipped` rather
-than `failure`.
+than `failure`. The optimized baseline uses the validated v2.49.2 entry-point
+commit, strict executed-test reports, complete-tree cache provenance and
+always-run consumer contract tests. Start with the [new React repository
+checklist](docs/ci/STARTER.md) and record CI changes in the
+[experiment ledger](docs/ci/EXPERIMENTS.md).
+
+Use Node 24 (`.node-version`) and the declared `pnpm@9.0.0`. Run
+`pnpm test:ci-contracts` for dependency-free CI regressions and `pnpm test:ci`
+for the report-producing full test command used on main.
+
+This public repository runs CI on standard GitHub-hosted `ubuntu-latest` runners.
+Reusable callers explicitly override organization runner defaults; CI caches and
+artifacts stay in GitHub Actions. No AWS fleet, AWS storage or paid infrastructure
+is configured by this starter.
 
 ## Dependency pins
 

@@ -25,7 +25,7 @@ the web UI, or GitHub Mobile). Per [the docs][about] and the
 > Required reviews, required status checks, and CODEOWNERS are all enforced
 > against the stack's **base branch**.
 
-So a `branches: [main]` filter — which `future-pay` has and this repo does not
+So a `branches: [main]` filter — which both `future-pay` and this repo have
 — is **not** a reason to avoid stacking. GitHub runs the checks on every member
 either way.
 
@@ -36,10 +36,9 @@ matches nothing and the PR gets **zero check runs** — not a red run, *no run a
 all*. Nothing blocks the merge and the code lands on the parent branch
 unverified.
 
-**This repo's own trigger has no branch filter** (`on: pull_request:`), so an
-ad-hoc based-on-branch PR *does* get checks here. It is still the wrong tool:
-GitHub does not know it is a stack, so none of the merge, rebase and retarget
-automation below applies to it.
+**This repo now also filters `pull_request.branches: [main]`.** An ad-hoc
+based-on-branch PR can therefore get zero checks here too. Use a real stack or
+a normal PR against main, and verify the checks actually started.
 
 Where it bites hard is `future-pay`, whose trigger is
 `pull_request: branches: [main]`. **Measured, not inferred:** future-pay#836 was

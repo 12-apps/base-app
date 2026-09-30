@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run self-hosted Renovate
+      - name: Run Renovate on the GitHub-hosted runner
         env:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           # Read-only fallback for changelog/release-notes fetching, so the

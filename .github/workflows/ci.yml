@@ -3,14 +3,10 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  # Post-merge full-suite safety net. Every PR lane is incremental
-  # (paths-filtered, turbo --affected), which is fast but can miss cross-file
-  # breakage. On push the shared pipeline runs the WHOLE suite with every filter
-  # forced true — that is what makes PR-time selection safe to trust.
+  # Mandatory full-suite safety net, with no lane-verdict reuse on push.
   push:
     branches: [main]
 
-# Reusable workflows cannot define workflow-level concurrency — the caller must.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name != 'push' }}
@@ -20,35 +16,85 @@ permissions:
   pull-requests: read
 
 jobs:
-  # Changes filter + `turbo lint/check-types --affected` + actionlint, with
-  # cross-run .turbo caches. Everything heavy gates on this tier's outputs.
   static:
     name: Static
     permissions:
       contents: read
-      pull-requests: read # dorny/paths-filter reads the PR's file list
-    uses: 12-apps/ci/.github/workflows/monorepo-static.yml@v1
+      pull-requests: read
+      actions: read # required by the reusable workflow's retry-gate declaration
+    uses: 12-apps/ci/.github/workflows/monorepo-static.yml@dd17e765c6d3799cfc9a3cbeebf3cf640d368908 # v2.49.2
     with:
-      # On a stacked PR, select against the STACK's base rather than this PR's
-      # immediate base (the layer below). Without it both the path filter and
-      # `turbo --affected` see one layer only, so lint/type-check skip whatever
-      # the lower layers touched and the tier goes green having checked less.
-      # Inert off a stack.
+      # Public open-source CI must not inherit the organization's AWS fleet.
+      runner: ubuntu-latest
+      node-version: '24'
       stack-aware: true
+      # Hash EVERY tracked merge-tree input. The engine adds runtime, source,
+      # commands and immutable selection-base identity, and records only passes.
+      lint-fingerprint-command: git rev-parse 'HEAD^{tree}'
+      type-check-fingerprint-command: git rev-parse 'HEAD^{tree}'
+      # Complete runtime/config surface for this starter, including SPA assets.
+      # Keep docs prose out, but never use negative dorny patterns.
+      code-paths: |
+        apps/**
+        packages/**
+        scripts/**
+        .github/workflows/**
+        **/*.json
+        **/*.mjs
+        **/*.cjs
+        **/*.ts
+        **/*.tsx
+        **/*.js
+        **/*.jsx
+        **/*.yaml
+        **/*.yml
+        **/*.sql
+        **/*.prisma
+        **/*.html
+        **/*.css
+        **/*.scss
+        **/*.svg
+        **/*.toml
+        .node-version
+        .npmrc
+        patches/**
 
-  # Unit tests (turbo cache + vitest results-cache persistence) and build.
+  contracts:
+    name: CI contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test consumer CI contracts (no install)
+        run: |
+          mkdir -p reports
+          node --test --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=reports/root.xml scripts/__tests__/*.test.mjs
+      - name: Require executed root tests
+        uses: 12-apps/ci/.github/actions/vitest-signal-guard@dd17e765c6d3799cfc9a3cbeebf3cf640d368908 # v2.49.2
+        with:
+          reports: reports/root.xml
+          lane: CI contracts
+
   tests:
     name: Tests
-    needs: static
+    needs: [static, contracts]
     if: needs.static.outputs.code == 'true'
     permissions:
       contents: read
-    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@v1
+    uses: 12-apps/ci/.github/workflows/monorepo-tests.yml@dd17e765c6d3799cfc9a3cbeebf3cf640d368908 # v2.49.2
     with:
-      # Must match the static tier: this tier selects with `turbo --affected`
-      # too, and a stack-aware gate feeding a stack-blind test tier is worse
-      # than neither — the pipeline still reports green, having tested less.
+      # Public open-source CI must not inherit the organization's AWS fleet.
+      runner: ubuntu-latest
+      node-version: '24'
       stack-aware: true
+      unit-test-command: node scripts/ci-unit.mjs --affected
+      unit-full-command: node scripts/ci-unit.mjs
+      unit-fingerprint-command: git rev-parse 'HEAD^{tree}'
+      build-fingerprint-command: git rev-parse 'HEAD^{tree}'
+      unit-junit-reports: apps/api/reports apps/events/reports apps/client/reports apps/admin/reports apps/super-admin/reports
       vitest-cache-paths: |
         apps/api/node_modules/.vite/vitest
         apps/events/node_modules/.vite/vitest
@@ -56,31 +102,20 @@ jobs:
         apps/admin/node_modules/.vite/vitest
         apps/super-admin/node_modules/.vite/vitest
 
-  # Require ONLY this job in the branch ruleset.
-  #
-  # `static` must be listed even though `tests` already depends on it: if the
-  # static tier FAILS, its dependents go `skipped` rather than `failure`, and an
-  # aggregation watching only the dependents would pass with zero tests run.
+  # Configure CI Success as required in a new repo. This file cannot change a
+  # ruleset, and a green run is not evidence that branch protection is enabled.
   ci-success:
     name: CI Success
     if: always()
-    needs: [static, tests]
+    needs: [static, contracts, tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
-        run: |
-          set -euo pipefail
-          echo "job results: $RESULTS"
-          if printf '%s' "$RESULTS" | grep -qwE 'failure|cancelled'; then exit 1; fi
-
-# Not adopted yet, and each for a reason rather than an oversight:
-#
-# - `quality.yml` needs consumer-side configs and `quality:*` scripts that this
-#   repo does not have (12-36). Adopting it before they exist just fails.
-# - `nextjs-prod-smoke.yml` has nothing to smoke — there is no Next.js app, by
-#   design. The equivalent here is booting `apps/api` and hitting `/health`,
-#   plus a `vite preview` load of `apps/spa` (12-10).
-# - `mcp-contract` / `rbac-coverage` / `entitlements-coverage` gate surfaces that
-#   arrive with their ports (12-13, 12-19, 12-23).
-# - `cd.yml` needs Dockerfiles and per-app deploy descriptors (12-38).
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Require each expected lane
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/ci-success.mjs

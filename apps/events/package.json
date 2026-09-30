@@ -10,7 +10,7 @@
     "start": "node dist/events.mjs",
     "lint": "eslint --max-warnings 0 .",
     "check-types": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@base/features": "workspace:*",
